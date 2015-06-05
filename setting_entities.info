@@ -1,0 +1,10 @@
+name =  Setting entities
+description = "Provides settings."
+package = Setting Entities
+core = 7.x
+
+dependencies[] = entity
+
+files[] = settings_entity.controller.inc
+files[] = views/views_handler_field_settings_entity_link_edit.inc
+;files[] = views/setting_entities.views.inc

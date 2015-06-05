@@ -1,0 +1,6 @@
+name = Setting entities client UI
+description = "Provides limited admin interface for setting entities module."
+package = Setting Entities
+core = 7.x
+
+dependencies[] = setting_entities

@@ -1,0 +1,356 @@
+<?php
+
+/**
+ * Returns all active setting entities in an array keyed by settings type.
+ */
+function setting_entities_get_active_settings() {
+  $results = drupal_static(__FUNCTION__, array());
+
+  if (!$results) {
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'settings_entity');
+
+    $query->propertyCondition('active', 1);
+    $result = $query->execute();
+
+    if (isset($result['settings_entity'])) {
+      $ids = array_keys($result['settings_entity']);
+      $entities = entity_load('settings_entity', $ids);
+      foreach ($entities as $entity) {
+        $results[$entity->type][$entity->id] = $entity;
+      }
+    }
+  }
+
+  return $results;
+
+}
+
+/**
+ * Implements hook_entity_presave().
+ * @todo write a failsafe to avoid having more than one active entities in a bundle.
+ */
+function setting_entities_entity_presave($entity, $type) {
+
+}
+
+/**
+ * Finds active settings entity in a given bundle.
+ *
+ * @param string $type
+ *   Setting entity type (bundle)
+ * @param bool $load
+ *   Wheter to load the actual entity or not.
+ * @return mixed
+ *   Returns an array or entity object
+ */
+function setting_entities_get_active_type_settings($type, $load = TRUE) {
+  $return = drupal_static(__FUNCTION__ . $type . (int) $load, array());
+
+  if (!$return) {
+    $efq = new EntityFieldQuery();
+    $efq->entityCondition('entity_type', 'settings_entity')
+      ->entityCondition('bundle', $type)
+      ->propertyCondition('active', 1);
+
+    $result = $efq->execute();
+    $return = $result;
+
+    if ($load && !empty($result)) {
+      $entity = reset($result['settings_entity']);
+      $entity = entity_load('settings_entity', array($entity->id));
+      $entity = reset($entity);
+      $return = $entity;
+    }
+  }
+
+  return $return;
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function setting_entities_entity_update($entity, $type) {
+  if ($type == 'settings_entity' && isset($entity->active) && $entity->active) {
+    menu_rebuild();
+  }
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function setting_entities_entity_insert($entity, $type) {
+  if ($type == 'settings_entity' && isset($entity->active) && $entity->active) {
+    menu_rebuild();
+  }
+}
+
+/**
+ * Implements hook_entity_info().
+ */
+function setting_entities_entity_info() {
+  $return = array(
+    'settings_entity' => array(
+      'label' => t('Settings'),
+      'entity class' => 'SettingsEntity',
+      'controller class' => 'SettingsEntityController',
+      'base table' => 'settings_entity',
+      'fieldable' => TRUE,
+      'entity keys' => array(
+        'id' => 'id',
+        'bundle' => 'type',
+      ),
+      'bundle keys' => array(
+        'bundle' => 'type',
+      ),
+      'bundles' => array(),
+      'load hook' => 'settings_entity_load',
+      'view modes' => array(
+        'full' => array(
+          'label' => t('Default'),
+          'custom settings' => FALSE,
+        ),
+      ),
+      'label callback' => 'entity_class_label',
+      'uri callback' => 'entity_class_uri',
+      'module' => 'setting_entities',
+      'access callback' => 'settings_entity_access',
+    ),
+  );
+  $return['settings_entity_type'] = array(
+    'label' => t('Settings Entity Type'),
+    'entity class' => 'SettingsEntityType',
+    'controller class' => 'SettingsEntityTypeController',
+    'base table' => 'settings_entity_type',
+    'fieldable' => FALSE,
+    'bundle of' => 'settings_entity',
+    'exportable' => TRUE,
+    'entity keys' => array(
+      'id' => 'id',
+      'name' => 'type',
+      'label' => 'label',
+    ),
+    'module' => 'setting_entities',
+    // Enable the entity API's admin UI.
+    'access callback' => 'settings_entity_type_access',
+  );
+
+  return $return;
+}
+
+/**
+ * Access callback for Setting Entity.
+ */
+function settings_entity_access($op, $setting_entity, $account = NULL, $entity_type = NULL) {
+  global $user;
+
+  if (!isset($account)) {
+    $account = $user;
+  }
+  switch ($op) {
+    case 'create':
+      return user_access('administer settings_entity entities', $account)
+      || user_access('create settings_entity entities', $account);
+    case 'view':
+      return user_access('administer settings_entity entities', $account)
+      || user_access('view settings_entity entities', $account);
+    case 'edit':
+      return user_access('administer settings_entity entities')
+      || user_access('edit any settings_entity entities')
+      || (user_access('edit own settings_entity entities') && ($setting_entity->uid == $account->uid));
+    case 'delete':
+      return user_access('administer settings_entity entities')
+      || user_access('delete any settings_entity entities')
+      || (user_access('delete own settings_entity entities') && ($setting_entity->uid == $account->uid));
+  }
+}
+
+/**
+ * Implements hook_permission().
+ */
+function setting_entities_permission() {
+  $permissions = array(
+    'administer settings_entity types' => array(
+      'title' => t('Administer setting entities'),
+      'description' => t('Allows users to configure setting types and their fields.'),
+      'restrict access' => TRUE,
+    ),
+    'create settings_entity entities' => array(
+      'title' => t('Create setting entities'),
+      'description' => t('Allows users to create setting entities.'),
+      'restrict access' => TRUE,
+    ),
+    'view settings_entity entities' => array(
+      'title' => t('View setting entities'),
+      'description' => t('Allows users to view setting entities.'),
+      'restrict access' => TRUE,
+    ),
+    'edit any settings_entity entities' => array(
+      'title' => t('Edit any setting entities'),
+      'description' => t('Allows users to edit any setting entities.'),
+      'restrict access' => TRUE,
+    ),
+    'edit own settings_entity entities' => array(
+      'title' => t('Edit own setting entities'),
+      'description' => t('Allows users to edit own setting entities.'),
+      'restrict access' => TRUE,
+    ),
+  );
+
+  return $permissions;
+}
+
+function setting_entities_entity_info_alter(&$entity_info) {
+  // Add uri
+  //$entity_info['settings_entity']['uri callback'] = 'setting_entities_admin_ui_entity_uri';
+
+  foreach (settings_entity_types() as $type => $info) {
+    $entity_info['settings_entity']['bundles'][$type] = array(
+      'label' => $info->label,
+      'admin' => array(
+        'path' => 'admin/structure/settings-entity-types/manage/%settings_entity_type',
+        'real path' => 'admin/structure/settings-entity-types/manage/' . $type,
+        'bundle argument' => 4,
+      ),
+    );
+  }
+}
+
+/**
+ * Implements callback_entity_info_uri().
+ */
+function setting_entities_admin_ui_entity_uri($entity) {
+  return array(
+    'path' => 'admin/content/setting-entities/' . $entity->id . '/edit',
+  );
+}
+
+/**
+ * Implements hook_entity_property_info_alter().
+ */
+function setting_entities_entity_property_info_alter(&$info) {
+  $properties = &$info['settings_entity']['properties'];
+  $properties['created'] = array(
+    'label' => t("Date created"),
+    'type' => 'date',
+    'description' => t("The date the node was posted."),
+    'setter callback' => 'entity_property_verbatim_set',
+    'setter permission' => 'administer nodes',
+    'schema field' => 'created',
+  );
+  $properties['changed'] = array(
+    'label' => t("Date changed"),
+    'type' => 'date',
+    'schema field' => 'changed',
+    'description' => t("The date the node was most recently updated."),
+  );
+  $properties['active'] = array(
+    'label' => t("Active"),
+    'type' => 'boolean',
+    'schema field' => 'active',
+    'description' => t("Wheter the settings entity is active"),
+  );
+  $properties['uid'] = array(
+    'label' => t("Author"),
+    'type' => 'user',
+    'description' => t("The author of the settings entity."),
+    'setter callback' => 'entity_property_verbatim_set',
+    'setter permission' => 'administer settings_entity entities',
+    'required' => TRUE,
+    'schema field' => 'uid',
+  );
+}
+
+
+/**
+ * Load a settings_entity.
+ */
+function settings_entity_load($id, $reset = FALSE) {
+  $setting_entities = settings_entity_load_multiple(array($id), array(), $reset);
+  return reset($setting_entities);
+}
+
+/**
+ * Load multiple setting entities based on certain conditions.
+ */
+function settings_entity_load_multiple($ids = array(), $conditions = array(), $reset = FALSE) {
+  return entity_load('settings_entity', $ids, $conditions, $reset);
+}
+
+/**
+ * Save settings_entity.
+ */
+function settings_entity_save($settings_entity) {
+  entity_save('settings_entity', $settings_entity);
+}
+
+/**
+ * Delete single settings_entity.
+ */
+function settings_entity_delete($settings_entity) {
+  entity_delete('settings_entity', entity_id('settings_entity' ,$settings_entity));
+}
+
+/**
+ * Delete multiple settings entities.
+ */
+function settings_entity_delete_multiple($settings_entity_ids) {
+  entity_delete_multiple('settings_entity', $settings_entity_ids);
+}
+
+/**
+ * Access callback for setting entity Type.
+ */
+function settings_entity_type_access($op, $entity = NULL) {
+  return user_access('administer settings_entity types');
+}
+
+/**
+ * Load setting entity Type.
+ */
+function settings_entity_type_load($settings_entity_type) {
+  return settings_entity_types($settings_entity_type);
+}
+
+/**
+ * List of setting entity types Types.
+ */
+function settings_entity_types($type_name = NULL) {
+  $types = entity_load_multiple_by_name('settings_entity_type', isset($type_name) ? array($type_name) : FALSE);
+  return isset($type_name) ? reset($types) : $types;
+}
+
+/**
+ * Save settings entity type entity.
+ */
+function settings_entity_type_save($settings_entity_type) {
+  entity_save('settings_entity_type', $settings_entity_type);
+}
+
+/**
+ * Delete single case type.
+ */
+function settings_entity_type_delete($settings_entity_type) {
+  entity_delete('settings_entity_type', entity_id('settings_entity_type' ,$settings_entity_type));
+}
+
+/**
+ * Delete multiple case types.
+ */
+function settings_entity_type_delete_multiple($settings_entity_type_ids) {
+  entity_delete_multiple('settings_entity_type', $settings_entity_type_ids);
+}
+
+/**
+ * Returns the address for setting entity list
+ */
+function setting_entities_get_entity_list_uri() {
+  return 'admin/content/setting-entities';
+}
+
+function setting_entities_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'setting_entities') . '/views',
+  );
+}

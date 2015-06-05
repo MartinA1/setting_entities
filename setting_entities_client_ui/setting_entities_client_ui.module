@@ -1,0 +1,107 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function setting_entities_client_ui_menu() {
+  $items = array();
+
+  $client_ui_uri = setting_entities_client_ui_uri();
+
+  $items[$client_ui_uri] = array(
+    'title' => 'Settings Dashboard',
+    'page callback' => 'setting_entities_client_ui_dashboard',
+    'access arguments' => array('administer settings_entity entities'),
+    'type' => MENU_LOCAL_ACTION,
+    'tab_parent' => 'settings_entity',
+    'tab_root' => 'settings_entity',
+  );
+
+  $items[$client_ui_uri . '/%settings_entity/edit'] = array(
+    'title' => 'Edit',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('settings_entity_form', 3),
+    'access callback' => 'entity_access',
+    'access arguments' => array('edit', 'settings_entity', 3),
+    'file path' => drupal_get_path('module', 'setting_entities'),
+    'file' => 'includes/setting_entities.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+  );
+
+  return $items;
+}
+
+/**
+ * @Implements hook_form_FORM_ID_alter().
+ */
+function setting_entities_client_ui_form_settings_entity_form_alter(&$form, &$form_state, $form_id, $setting_entity) {
+  $item = menu_get_item();
+  $client_ui_uri = setting_entities_client_ui_uri();
+  $form['actions']['submit']['#submit'][] = 'setting_entities_client_ui_setting_submit';
+
+  // Hide delete links
+  if ($item['path'] == $client_ui_uri . '/%/edit') {
+    $form['actions']['delete']['#access'] = FALSE;
+    $form['active']['#type'] = 'hidden';
+    $form['title']['#access'] = FALSE;
+  }
+}
+
+/**
+ * settings_entity_form callback.
+ */
+function setting_entities_client_ui_setting_submit($form, &$form_state) {
+  $item = menu_get_item();
+  $client_ui_uri = setting_entities_client_ui_uri();
+
+  // Redirect if client UI.
+  if ($item['path'] == $client_ui_uri . '/%/edit') {
+    $form_state['redirect'] = setting_entities_client_ui_uri();
+  }
+}
+
+/**
+ * Returns the uri for client ui dashboard view.
+ */
+function setting_entities_client_ui_uri() {
+  return 'admin/config/setting_entities';
+}
+
+/**
+ * Callback for hoo_menu(). Builds the dashboard page.
+ */
+function setting_entities_client_ui_dashboard() {
+  global $language;
+  $items = array();
+  $active_settings = setting_entities_get_active_settings();
+  $info = entity_get_info('settings_entity');
+  $client_ui_uri = setting_entities_client_ui_uri();
+
+  foreach($active_settings as $setting_entity_type => $entities) {
+    // Assumptsion is that there is only one active entity per type.
+    $entity = reset($entities);
+    $url = $client_ui_uri . '/' . $entity->identifier() . '/edit';
+    $options = array(
+      'language' => $language
+    );
+    $items[] = array(
+      'title' => $info['bundles'][$entity->type]['label'],
+      'href' => $url,
+      'localized_options' => $options,
+    );
+  }
+
+  $content = theme('admin_block_content', array('content' => $items));
+
+  $variables = array(
+    'block' => array(
+      'show' => TRUE,
+      'title' => t('Settings'),
+      'content' => $content,
+      'description' => t('List of available settings'),
+    )
+  );
+
+  return theme('admin_block', $variables);
+}

@@ -1,0 +1,110 @@
+<?php
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function setting_entities_admin_ui_entity_info_alter(&$entity_info) {
+  $entity_info['settings_entity_type']['admin ui'] = array(
+    'path' => 'admin/structure/settings-entity-types',
+    'file path' => drupal_get_path('module', 'setting_entities'),
+    'file' => 'includes/setting_entities.admin.inc',
+    'controller class' => 'SettingsEntityTypeUIController',
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function setting_entities_admin_ui_menu() {
+  $items = array();
+
+  $items['admin/content/setting-entities/add'] = array(
+    'title' => 'Add setting',
+    'page callback' => 'settings_entity_admin_add_page',
+    'access arguments' => array('administer settings_entity entities'),
+    'file path' => drupal_get_path('module', 'setting_entities'),
+    'file' => 'includes/setting_entities.admin.inc',
+    'type' => MENU_LOCAL_ACTION,
+    'tab_parent' => 'settings_entity',
+    'tab_root' => 'settings_entity',
+  );
+
+  $settings_uri = 'admin/content/setting-entities/%settings_entity';
+  $settings_argument_position = 3;
+
+  $items[$settings_uri] = array(
+    'title callback' => 'entity_label',
+    'title arguments' => array('settings_entity', $settings_argument_position),
+    'page callback' => 'settings_entity_view',
+    'page arguments' => array($settings_argument_position),
+    'access callback' => 'entity_access',
+    'access arguments' => array('view', 'settings_entity', $settings_argument_position),
+    'file path' => drupal_get_path('module', 'setting_entities'),
+    'file' => 'includes/setting_entities.pages.inc',
+  );
+
+  $items[$settings_uri . '/view'] = array(
+    'title' => 'View',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+
+  $items[$settings_uri . '/delete'] = array(
+    'title' => 'Delete Setting',
+    'title callback' => 'settings_entity_label',
+    'title arguments' => array($settings_argument_position),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('settings_entity_delete_form', $settings_argument_position),
+    'access callback' => 'entity_access',
+    'access arguments' => array('edit', 'settings_entity', $settings_argument_position),
+    'file path' => drupal_get_path('module', 'setting_entities'),
+    'file' => 'includes/setting_entities.admin.inc',
+  );
+
+  $items[$settings_uri . '/edit'] = array(
+    'title' => 'Edit',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('settings_entity_form', $settings_argument_position),
+    'access callback' => 'entity_access',
+    'access arguments' => array('edit', 'settings_entity', $settings_argument_position),
+    'file path' => drupal_get_path('module', 'setting_entities'),
+    'file' => 'includes/setting_entities.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+  );
+
+  foreach (settings_entity_types() as $type => $info) {
+    $items['admin/content/setting-entities/add/' . $type] = array(
+      'title' => 'Add ' . $info->label . ' Setting',
+      'page callback' => 'settings_entity_add',
+      'page arguments' => array(4),
+      'access callback' => 'entity_access',
+      'access arguments' => array('create', 'settings_entity', $type),
+      'file path' => drupal_get_path('module', 'setting_entities'),
+      'file' => 'includes/setting_entities.admin.inc',
+    );
+  }
+
+  $items['admin/structure/settings-entity-types/%settings_entity/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('settings_entity_type_form_delete_confirm', 4),
+    'access arguments' => array('administer settings_entity types'),
+    'weight' => 1,
+    'type' => MENU_NORMAL_ITEM,
+    'file path' => drupal_get_path('module', 'setting_entities'),
+    'file' => 'includes/setting_entities.admin.inc',
+  );
+
+  // Entity lists by type
+
+
+  return $items;
+}
+
+function setting_entities_admin_ui_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'setting_entities_admin_ui') . '/views',
+  );
+}
