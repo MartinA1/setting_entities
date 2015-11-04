@@ -41,7 +41,8 @@ function setting_entities_client_ui_form_settings_entity_form_alter(&$form, &$fo
   $form['actions']['submit']['#submit'][] = 'setting_entities_client_ui_setting_submit';
 
   // Hide delete links
-  if ($item['path'] == $client_ui_uri . '/%/edit') {
+  // @todo refactor this
+  if (in_array($item['path'], array($client_ui_uri . '/%/edit', $client_ui_uri . '/%/edit/%'))) {
     $form['actions']['delete']['#access'] = FALSE;
     $form['active']['#type'] = 'hidden';
     $form['title']['#access'] = FALSE;

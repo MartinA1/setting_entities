@@ -96,6 +96,24 @@ function setting_entities_entity_info() {
       'controller class' => 'SettingsEntityController',
       'base table' => 'settings_entity',
       'fieldable' => TRUE,
+      'translation' => array(
+        'entity_translation' => array(
+          'path schemes' => array(
+            'default' => array(
+              'base path' => 'admin/content/setting-entities/%settings_entity'
+            ),
+            'client' => array(
+              'edit path' => 'admin/config/setting_entities/%settings_entity/edit',
+              'path wildcard' => '%settings_entity'
+            )
+          ),
+          /*'base path' => 'admin/content/setting-entities/%settings_entity',
+          'default settings' => array(
+            'default_language' => LANGUAGE_NONE,
+            'hide_language_selector' => FALSE,
+          ),*/
+        ),
+      ),
       'entity keys' => array(
         'id' => 'id',
         'bundle' => 'type',
@@ -258,6 +276,15 @@ function setting_entities_entity_property_info_alter(&$info) {
     'setter permission' => 'administer settings_entity entities',
     'required' => TRUE,
     'schema field' => 'uid',
+  );
+  $properties['language'] = array(
+    'label' => t("Language"),
+    'type' => 'token',
+    'description' => t("The language the entity is written in."),
+    'setter callback' => 'entity_property_verbatim_set',
+    'options list' => 'entity_metadata_language_list',
+    'schema field' => 'language',
+    'setter permission' => 'administer nodes',
   );
 }
 
