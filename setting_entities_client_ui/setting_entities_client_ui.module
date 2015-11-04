@@ -40,9 +40,13 @@ function setting_entities_client_ui_form_settings_entity_form_alter(&$form, &$fo
   $client_ui_uri = setting_entities_client_ui_uri();
   $form['actions']['submit']['#submit'][] = 'setting_entities_client_ui_setting_submit';
 
-  // Hide delete links
-  // @todo refactor this
-  if (in_array($item['path'], array($client_ui_uri . '/%/edit', $client_ui_uri . '/%/edit/%'))) {
+  $client_paths = array(
+    $client_ui_uri . '/%/edit',
+    $client_ui_uri . '/%/edit/%'
+  );
+
+  // Hide delete links and stuff client doesn't need to see
+  if (in_array($item['path'], $client_paths)) {
     $form['actions']['delete']['#access'] = FALSE;
     $form['active']['#type'] = 'hidden';
     $form['title']['#access'] = FALSE;
