@@ -60,8 +60,13 @@ function setting_entities_client_ui_setting_submit($form, &$form_state) {
   $item = menu_get_item();
   $client_ui_uri = setting_entities_client_ui_uri();
 
+  $client_paths = array(
+    $client_ui_uri . '/%/edit',
+    $client_ui_uri . '/%/edit/%'
+  );
+
   // Redirect if client UI.
-  if ($item['path'] == $client_ui_uri . '/%/edit') {
+  if (in_array($item['path'], $client_paths)) {
     $form_state['redirect'] = setting_entities_client_ui_uri();
   }
 }
