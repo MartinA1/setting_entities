@@ -3,4 +3,6 @@ description = "Provides limited admin interface for setting entities module."
 package = Setting Entities
 core = 7.x
 
+stylesheets[all][] = css/custom.css
+
 dependencies[] = setting_entities

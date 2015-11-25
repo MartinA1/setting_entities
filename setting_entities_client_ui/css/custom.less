@@ -1,0 +1,81 @@
+/** Mixins **/
+
+
+@active-link-color: #0F7CC0;
+@inactive-link-color: #3D95CC;
+@wrapper-box-color: #CCC;
+
+#setting-entities-client-ui {
+  border: 1px solid @wrapper-box-color;
+  margin: 10px 0;
+  position: relative;
+  background: #eee;
+  #setting-entities-tabs {
+    float: left;
+    display: block;
+    width: 240px;
+    font-size: 1em;
+    line-height: 1;
+    margin: 0 -100% -1px 0;
+    padding: 0;
+    ul {
+      margin: 0;
+      li.tab {
+        list-style: none;
+        margin: 0;
+        box-sizing: border-box;
+        position: relative;
+        &.first a {
+          border-top: 0;
+        }
+        &.active {
+          background: #fff;
+          width: 100%;
+          &:after {
+            content: " ";
+            display: block;
+            height: 100%;
+            width: 1px;
+            position: absolute;
+            right: -1px;
+            top: 0;
+            background: #fff;
+          }
+          a {
+            color: @active-link-color;
+            &:before {
+              content: '►';
+              margin-right: 6px;
+              color: @active-link-color;
+            }
+          }
+        }
+        a {
+          border-top: 1px solid @wrapper-box-color;
+          display: block;
+          padding: 10px;
+          color: @inactive-link-color;
+          &:before {
+            content: '►';
+            margin-right: 6px;
+            color: @inactive-link-color;
+          }
+          &:hover {
+            color: @active-link-color;
+            text-decoration: none;
+            &:before {
+              color: @active-link-color;
+            }
+          }
+        }
+      }
+    }
+  }
+  #setting-entities-content {
+    background: #fff;
+    min-height: 200px;
+    margin: 0 0 0 240px;
+    padding: 10px 15px 10px 15px;
+    border-left: 1px solid @wrapper-box-color;
+  }
+}

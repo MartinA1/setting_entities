@@ -17,7 +17,7 @@ function setting_entities_client_ui_menu() {
     'tab_root' => 'settings_entity',
   );
 
-  $items[$client_ui_uri . '/%settings_entity/edit'] = array(
+  /*$items[$client_ui_uri . '/%settings_entity/edit'] = array(
     'title' => 'Edit',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('settings_entity_form', 3),
@@ -25,6 +25,16 @@ function setting_entities_client_ui_menu() {
     'access arguments' => array('edit', 'settings_entity', 3),
     'file path' => drupal_get_path('module', 'setting_entities'),
     'file' => 'includes/setting_entities.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+  );*/
+
+  $items[$client_ui_uri . '/%settings_entity/edit'] = array(
+    'title' => 'Edit',
+    'page callback' => 'setting_entities_client_ui_edit_page',
+    'page arguments' => array(3),
+    'access callback' => 'entity_access',
+    'access arguments' => array('edit', 'settings_entity', 3),
     'type' => MENU_LOCAL_TASK,
     'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
   );
@@ -67,7 +77,7 @@ function setting_entities_client_ui_setting_submit($form, &$form_state) {
 
   // Redirect if client UI.
   if (in_array($item['path'], $client_paths)) {
-    $form_state['redirect'] = setting_entities_client_ui_uri();
+    $form_state['redirect'] = current_path();
   }
 }
 
@@ -100,7 +110,7 @@ function setting_entities_client_ui_dashboard() {
       'href' => $url,
       'localized_options' => $options,
     );
-  }
+}
 
   $content = theme('admin_block_content', array('content' => $items));
 
@@ -114,4 +124,66 @@ function setting_entities_client_ui_dashboard() {
   );
 
   return theme('admin_block', $variables);
+}
+
+function setting_entities_client_ui_edit_page($entity_id) {
+  module_load_include('inc', 'setting_entities', 'includes/setting_entities.admin');
+  $form = drupal_get_form('settings_entity_form', $entity_id);
+
+  $tabs = setting_entities_client_ui_tabs();
+
+  return theme('setting_entities_client_ui', array('tabs' => $tabs, 'content_array' => $form));
+}
+
+function setting_entities_client_ui_tabs() {
+  global $language;
+  drupal_add_css(drupal_get_path('module', 'setting_entities_client_ui') . '/css/style.css',
+    array('group' => CSS_DEFAULT, 'every_page' => TRUE)
+  );
+  $active_settings = setting_entities_get_active_settings();
+  $info = entity_get_info('settings_entity');
+  $client_ui_uri = setting_entities_client_ui_uri();
+
+  $tabs = array();
+  $i = 0;
+  foreach($active_settings as $setting_entity_type => $entities) {
+    $i++;
+    $entity = reset($entities);
+
+    $attributes = array(
+      'class' => array('tab')
+    );
+
+    switch($i) {
+      case 1:
+        array_push($attributes['class'], 'first');
+        break;
+      case count($active_settings):
+        array_push($attributes['class'], 'last');
+    }
+
+    $path = $client_ui_uri . '/' . $entity->identifier() . '/edit';
+    $title = $info['bundles'][$entity->type]['label'];
+
+    if (in_array(current_path(), array($path, $path . '/' . $language->language))) {
+      array_push($attributes['class'], 'active');
+    }
+
+    $tabs[] = array(
+      'title' => $title,
+      'path' => $path,
+      'attributes' => $attributes,
+    );
+  }
+
+  return $tabs;
+}
+
+function setting_entities_client_ui_theme($existing, $type, $theme, $path) {
+  return array(
+    'setting_entities_client_ui' => array(
+      'variables' => array('tabs' => array(), 'content_array' => array()),
+      'template' => 'includes/setting-entities-client-ui'
+    ),
+  );
 }
