@@ -7,14 +7,13 @@ function setting_entities_get_active_settings() {
   $results = &drupal_static(__FUNCTION__, array());
 
   if (!$results) {
-    $query = new EntityFieldQuery();
-    $query->entityCondition('entity_type', 'settings_entity');
-
-    $query->propertyCondition('active', 1);
+    $query = db_select('settings_entity', 'e');
+    $query->condition('e.active', 1);
+    $query->fields('e', array('id'));
     $result = $query->execute();
 
-    if (isset($result['settings_entity'])) {
-      $ids = array_keys($result['settings_entity']);
+    if ($result->rowCount()) {
+      $ids = $result->fetchCol(0);
       $entities = entity_load('settings_entity', $ids);
       foreach ($entities as $entity) {
         $results[$entity->type][$entity->id] = $entity;
@@ -23,15 +22,6 @@ function setting_entities_get_active_settings() {
   }
 
   return $results;
-
-}
-
-/**
- * Implements hook_entity_presave().
- * @todo write a failsafe to avoid having more than one active entities in a bundle.
- */
-function setting_entities_entity_presave($entity, $type) {
-
 }
 
 /**
@@ -48,17 +38,15 @@ function setting_entities_get_active_type_settings($type, $load = TRUE) {
   $return = &drupal_static(__FUNCTION__ . $type . (int) $load, array());
 
   if (!$return) {
-    $efq = new EntityFieldQuery();
-    $efq->entityCondition('entity_type', 'settings_entity')
-      ->entityCondition('bundle', $type)
-      ->propertyCondition('active', 1);
+    $query = db_select('settings_entity', 'e');
+    $query->condition('e.active', 1);
+    $query->condition('e.type', $type);
+    $query->fields('e', array('id'));
+    $result = $query->execute();
 
-    $result = $efq->execute();
-    $return = $result;
-
-    if ($load && !empty($result)) {
-      $entity = reset($result['settings_entity']);
-      $entity = entity_load('settings_entity', array($entity->id));
+    if ($load && $result->rowCount()) {
+      $id = $result->fetchField(0);
+      $entity = entity_load('settings_entity', array($id));
       $entity = reset($entity);
       $return = $entity;
     }
@@ -107,11 +95,6 @@ function setting_entities_entity_info() {
               'path wildcard' => '%settings_entity'
             )
           ),
-          /*'base path' => 'admin/content/setting-entities/%settings_entity',
-          'default settings' => array(
-            'default_language' => LANGUAGE_NONE,
-            'hide_language_selector' => FALSE,
-          ),*/
         ),
       ),
       'entity keys' => array(
@@ -218,6 +201,9 @@ function setting_entities_permission() {
   return $permissions;
 }
 
+/**
+ * @Implements hook_entity_info_alter()
+ */
 function setting_entities_entity_info_alter(&$entity_info) {
   // Add uri
   //$entity_info['settings_entity']['uri callback'] = 'setting_entities_admin_ui_entity_uri';
@@ -375,6 +361,9 @@ function setting_entities_get_entity_list_uri() {
   return 'admin/content/setting-entities';
 }
 
+/**
+ * @Implements hook_views_api()
+ */
 function setting_entities_views_api() {
   return array(
     'api' => 3,
