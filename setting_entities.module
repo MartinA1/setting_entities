@@ -4,7 +4,7 @@
  * Returns all active setting entities in an array keyed by settings type.
  */
 function setting_entities_get_active_settings() {
-  $results = drupal_static(__FUNCTION__, array());
+  $results = &drupal_static(__FUNCTION__, array());
 
   if (!$results) {
     $query = new EntityFieldQuery();
@@ -45,7 +45,7 @@ function setting_entities_entity_presave($entity, $type) {
  *   Returns an array or entity object
  */
 function setting_entities_get_active_type_settings($type, $load = TRUE) {
-  $return = drupal_static(__FUNCTION__ . $type . (int) $load, array());
+  $return = &drupal_static(__FUNCTION__ . $type . (int) $load, array());
 
   if (!$return) {
     $efq = new EntityFieldQuery();
