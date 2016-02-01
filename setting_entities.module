@@ -56,6 +56,23 @@ function setting_entities_get_active_type_settings($type, $load = TRUE) {
 }
 
 /**
+ * Implements hook_forms()
+ */
+function setting_entities_forms($form_id, $args) {
+  $forms['settings_entity_form'] = array(
+    'callback' => 'setting_entities_get_settings_entity_form',
+  );
+
+  return $forms;
+}
+
+function setting_entities_get_settings_entity_form($form, &$form_state, $settings_entity) {
+  form_load_include($form_state, 'inc', 'setting_entities', 'includes/setting_entities.admin');
+  $form = settings_entity_form($form, $form_state, $settings_entity);
+  return $form;
+}
+
+/**
  * Implements hook_entity_update().
  */
 function setting_entities_entity_update($entity, $type) {
