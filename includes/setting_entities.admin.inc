@@ -125,7 +125,8 @@ function settings_entity_add($type) {
  * Settings entity Form.
  */
 function settings_entity_form($form, &$form_state, $settings_entity) {
-  $a = form_load_include($form_state, 'inc', 'setting_entities', 'includes/setting_entities.admin');
+  form_load_include($form_state, 'inc', 'setting_entities', 'includes/setting_entities.admin');
+
   $form_state['settings_entity'] = $settings_entity;
 
   $form['title'] = array(
