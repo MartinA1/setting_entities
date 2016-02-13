@@ -148,7 +148,7 @@ function settings_entity_form($form, &$form_state, $settings_entity) {
     '#value' => $settings_entity->uid,
   );
 
-  field_attach_form('settings_entity', $settings_entity, $form, $form_state);
+  field_attach_form('settings_entity', $settings_entity, $form, $form_state, entity_language('settings_entity', $settings_entity));
 
   $submit = array();
   if (!empty($form['#submit'])) {
