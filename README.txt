@@ -27,3 +27,6 @@ $my_setting_value = $setting->wrapper()->field_my_custom_setting_field->value();
 print render($my_setting_value);
 
 Note that there can only be one active entity per type. You can add more entities to the type but only one of them can be active at a time. The entity instance being currently active is configurable for client.
+
+
+It provides 2 submodules - "admin ui" and "client ui". In order to add setting entity types you need to enable the admin UI submodule. The client UI submodule provides a nice interface for the end user to fill. It can be found under "Settings dashboard" menu link under "Configuration".
