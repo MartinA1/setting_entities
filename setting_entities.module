@@ -55,9 +55,6 @@ function setting_entities_get_active_type_settings($type, $load = TRUE) {
   return $return;
 }
 
-/**
- * Implements hook_forms()
- */
 function setting_entities_forms($form_id, $args) {
   $forms['settings_entity_form'] = array(
     'callback' => 'setting_entities_get_settings_entity_form',
@@ -100,6 +97,7 @@ function setting_entities_entity_info() {
       'entity class' => 'SettingsEntity',
       'controller class' => 'SettingsEntityController',
       'base table' => 'settings_entity',
+      'revision table' => 'settings_entity_revisions',
       'fieldable' => TRUE,
       'translation' => array(
         'entity_translation' => array(
@@ -117,6 +115,7 @@ function setting_entities_entity_info() {
       'entity keys' => array(
         'id' => 'id',
         'bundle' => 'type',
+        'revision' => 'vid',
       ),
       'bundle keys' => array(
         'bundle' => 'type',

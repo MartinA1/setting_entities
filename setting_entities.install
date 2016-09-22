@@ -15,6 +15,13 @@ function setting_entities_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
+      'vid' => array(
+        'description' => 'The current {settings_entity_revisions}.vid version identifier.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => NULL,
+      ),
       'active' => array(
         'description' => 'Wheter the entity is active',
         'type' => 'int',
@@ -54,6 +61,72 @@ function setting_entities_schema() {
       ),
     ),
     'primary key' => array('id'),
+    'unique keys' => array(
+      'vid' => array('vid'),
+    ),
+    'foreign keys' => array(
+      'entity_revision' => array(
+        'table' => 'settings_entity_revisions',
+        'columns' => array('vid' => 'vid'),
+      ),
+      'entity_author' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+    ),
+  );
+
+  $schema['settings_entity_revisions'] = array(
+    'description' => 'The base table for settings.',
+    'fields' => array(
+      'id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The unique identifier for the setting entity.',
+      ),
+      'vid' => array(
+        'description' => 'The current {settings_entity_revisions}.vid version identifier.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => 'The {users}.uid that created this version.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'title' => array(
+        'description' => 'The title of this version.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the example was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'id' => array('id'),
+      'uid' => array('uid'),
+    ),
+    'primary key' => array('vid'),
+    'foreign keys' => array(
+      'versioned_entity' => array(
+        'table' => 'settings_entity',
+        'columns' => array('id' => 'id'),
+      ),
+      'version_author' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+    ),
   );
 
   $schema['settings_entity_type'] = array(
@@ -85,4 +158,77 @@ function setting_entities_schema() {
   );
 
   return $schema;
+}
+
+
+/**
+ * Create revision table.
+ */
+function setting_entities_update_7001() {
+  $name = 'settings_entity_revisions';
+  $schema = setting_entities_schema();
+  $table = $schema[$name];
+  db_create_table($name, $table);
+}
+
+
+/**
+ * Add version field.
+ */
+function setting_entities_update_7002() {
+  $field = array(
+    'description' => 'The current {settings_entity_revisions}.vid version identifier.',
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => 0,
+  );
+
+  $keys = array(
+    'foreign keys' => array(
+      'entity_revision' => array(
+        'table' => 'settings_entity_revisions',
+        'columns' => array('vid' => 'vid'),
+      ),
+    ),
+  );
+
+  db_add_field('settings_entity', 'vid', $field, $keys);
+}
+
+/**
+ * Update existing entities.
+ */
+function setting_entities_update_7003() {
+  $q = db_select('settings_entity', 's')
+    ->fields('s', array());
+
+  $results = $q->execute()->fetchAllAssoc('id');
+
+  foreach ($results as $entity) {
+    drupal_write_record('settings_entity_revisions', $entity);
+    drupal_write_record('settings_entity', $entity, array('id'));
+  }
+}
+
+/**
+ * Modify version field.
+ */
+function setting_entities_update_7004() {
+  $schema = setting_entities_schema();
+  $field = $schema['settings_entity']['fields']['vid'];
+
+  $keys = array(
+    'unique keys' => array(
+      'vid' => array('vid'),
+    ),
+    'foreign keys' => array(
+      'entity_revision' => array(
+        'table' => 'settings_entity_revisions',
+        'columns' => array('vid' => 'vid'),
+      ),
+    ),
+  );
+
+  db_change_field('settings_entity', 'vid', 'vid', $field, $keys);
 }
